@@ -12,5 +12,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::prefix('msg')->group(function() {
     Route::post('receiver', [WhatsAppController::class, 'listen']);
-    Route::post('send', [WhatsAppController::class, 'send']);
+    Route::post('send', [WhatsAppController::class, 'send'])->name('send-message');
 });

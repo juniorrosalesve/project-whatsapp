@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 use App\Models\Ticket;
 use App\Models\Message;
@@ -15,9 +16,11 @@ class WhatsAppController extends Controller
         $tickets    =   Ticket::where('close', false)->get();
         $messages   =   null;
         $order      =   null;
+        $ticket     =   null;
         $ticketId   =   ($r->has('ticketId') ? $r->ticketId : 0);
         if($ticketId != 0) {
-            if(empty(Ticket::find($ticketId)))
+            $ticket     =   Ticket::find($ticketId);
+            if(empty($ticket))
                 return redirect()->route('dashboard');
             $messages   =   Message::where('ticketId', $ticketId)->orderBy('created_at', 'asc')->get();
             $order      =   Order::where('ticketId', $ticketId)->first();
@@ -26,6 +29,7 @@ class WhatsAppController extends Controller
             'tickets' =>  $tickets, // solo tickets abiertos.
             'messages' => $messages,
             'ticketId' => $ticketId,
+            'ticket' => $ticket,
             'order' => $order
         ]);
     }
@@ -79,6 +83,16 @@ class WhatsAppController extends Controller
     }
     public function send(Request $r) {
         $message    =   Message::create($r->except('_token'));
-        return $message->message;
+
+        Http::post('https://api-fb.cambiex.net/message/send', [
+            'to' => $r->phone,
+            'message' => $r->message,
+        ]);
+
+        if($r->has('isForm')) {
+            return redirect(url('dashboard').'?ticketId='.$r->ticketId);
+        }
+        else
+            return $message->message;
     }
 }
